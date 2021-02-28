@@ -73,35 +73,21 @@ def decode_message_data(substrate: SubstrateInterface, contract: ContractInstanc
   return result
 
 
-def main():
-  aquasphere_type_registry = load_type_registry_file("./aquasphere_types.json")
-
-  substrate = SubstrateInterface(
-      url="wss://rpc-test.aquasphere.io",
-      ss58_format=42,
-      type_registry_preset='substrate-node-template',
-      type_registry=aquasphere_type_registry
-  )
-
-  contract = ContractInstance.create_from_address(
-      contract_address="5HjDz4zQTFXFFPVoHhp1EzNp38WB5DpdV4wt77qG8JtmnfXt",
-      metadata_file=os.path.join(os.path.dirname(__file__), 'entropy.json'),
-      substrate=substrate
-  )
-
+def demo_generate_message_data(substrate: SubstrateInterface, contract: ContractInstance):
   ## message call: Alice -> Bob, transfer 100 ENT
   ## generated data: 0xfae3a09d8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4800e1f505000000000000000000000000
   ## Sample transaction in rpc-tes env:
   ##  SELECT * FROM `polkascan`.`data_extrinsic` where module_id = 'Contracts'  and extrinsic_hash='9fb9029d486e5cb684b5386975f55f5b94e2d9b80a341e898cd4238e246369ee';
   scale_data = generate_message_data(substrate, contract, "transfer", args = {
-      'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',  # Bob's ss58_address
-      'value': 100000000
+    'to': '5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty',  # Bob's ss58_address
+    'value': 100000000
   })
   # Output: 0xfae3a09d8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4800e1f505000000000000000000000000
   # Note: Bob's public key is 0x8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48
   print("generate_message_data output to_hex: {}".format(scale_data.to_hex()))
-  
 
+
+def demo_talk_to_contracts(substrate: SubstrateInterface, contract: ContractInstance):
   alice = Keypair.create_from_uri('//Alice')
 
   # Query token name/symbol/decimals
@@ -121,7 +107,9 @@ def main():
   result = contract.read(alice, 'balance_of', args={'owner': alice.public_key})
   # Balance: {'success': {'data': 999900000000, 'flags': 0, 'gas_consumed': 13954500000}}  
   print('Balance:', result.value)
-  
+
+
+def demo_decode_contract_message_call(substrate: SubstrateInterface, contract: ContractInstance):
   # Query block
   block_hash = "0x17c55e4e5aec752c167cd5ae8f565cef72ece119f5d691408911f6c42f521c14"
   # Retrieve extrinsics in block
@@ -148,6 +136,30 @@ def main():
         print("Param 'data' value: {}".format(param['value']))
         param['value'] = decode_message_data(substrate, contract, param['value'])
       print("Param '{}': {}".format(param['name'], param['value']))
+
+
+def main():
+  aquasphere_type_registry = load_type_registry_file("./aquasphere_types.json")
+
+  substrate = SubstrateInterface(
+    url="wss://rpc-test.aquasphere.io",
+    ss58_format=42,
+    type_registry_preset='substrate-node-template',
+    type_registry=aquasphere_type_registry
+  )
+
+  contract = ContractInstance.create_from_address(
+    contract_address="5HjDz4zQTFXFFPVoHhp1EzNp38WB5DpdV4wt77qG8JtmnfXt",
+    metadata_file=os.path.join(os.path.dirname(__file__), 'entropy.json'),
+    substrate=substrate
+  )
+
+  demo_generate_message_data(substrate, contract)
+  
+  demo_talk_to_contracts(substrate, contract)
+
+  demo_decode_contract_message_call(substrate, contract)
+  
 
 
 if __name__ == '__main__':
