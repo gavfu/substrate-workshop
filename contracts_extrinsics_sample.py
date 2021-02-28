@@ -1,6 +1,6 @@
 import os
 from scalecodec.type_registry import load_type_registry_file, load_type_registry_preset
-from substrateinterface import SubstrateInterface, Keypair
+from substrateinterface import SubstrateInterface, Keypair, ContractEvent
 from substrateinterface.contracts import ContractCode, ContractInstance, ContractMetadata
 from scalecodec.utils.ss58 import ss58_encode
 from scalecodec import ScaleBytes
@@ -138,6 +138,18 @@ def demo_decode_contract_message_call(substrate: SubstrateInterface, contract: C
       print("Param '{}': {}".format(param['name'], param['value']))
 
 
+def demo_decode_contract_event(substrate: SubstrateInterface, contract: ContractInstance):
+  # Data: SELECT * FROM `polkascan`.`data_event` where block_id = '60264' and event_id = 'ContractExecution';
+  contract_event_data = '0x0101d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d018eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a4800e1f505000000000000000000000000'
+  contract_event_obj = ContractEvent(
+    data=ScaleBytes(contract_event_data),
+    runtime_config=substrate.runtime_config,
+    contract_metadata=contract.metadata
+  )
+  contract_event_obj.decode()
+  print(contract_event_obj.value)
+
+
 def main():
   aquasphere_type_registry = load_type_registry_file("./aquasphere_types.json")
 
@@ -160,6 +172,7 @@ def main():
 
   demo_decode_contract_message_call(substrate, contract)
   
+  demo_decode_contract_event(substrate, contract)
 
 
 if __name__ == '__main__':
